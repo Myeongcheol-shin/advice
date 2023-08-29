@@ -1,17 +1,14 @@
 package com.shino72.saying.service
 
-import com.shino72.saying.BuildConfig
 import com.shino72.saying.utils.data.PhotoResponse
 import com.shino72.saying.utils.data.SlipResponse
 import retrofit2.Response
 import retrofit2.http.GET
 import retrofit2.http.Header
-import retrofit2.http.Headers
 import retrofit2.http.Query
-import retrofit2.http.Url
 
 interface ApiService {
-    @GET
+    @GET("advice")
     suspend fun getAdvice () : Response<SlipResponse>
 }
 

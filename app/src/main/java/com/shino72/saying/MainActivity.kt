@@ -1,7 +1,11 @@
 package com.shino72.saying
 
+import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.BlurMaskFilter
 import android.graphics.Canvas
+import android.graphics.Paint
+import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
@@ -11,12 +15,14 @@ import androidx.activity.viewModels
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.coroutineScope
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.Resource
 import com.gun0912.tedpermission.PermissionListener
 import com.gun0912.tedpermission.normal.TedPermission
 import com.shino72.saying.databinding.ActivityMainBinding
 import com.shino72.saying.utils.Status
 import com.shino72.saying.viewmodel.ImageViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import jp.wasabeef.glide.transformations.BlurTransformation
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
@@ -29,37 +35,92 @@ class MainActivity : AppCompatActivity() {
 
         binding = DataBindingUtil.setContentView(this, R.layout.activity_main)
 
+        lifecycle.coroutineScope.launchWhenCreated {
+            imageViewModel.save.collect {
+                if (it.isLoading) {
+                    binding.status.text = "Loading..."
+                    binding.progress.visibility = View.VISIBLE
+                    binding.status.visibility = View.VISIBLE
+                    binding.status.text = "Save Advice..."
+                }
+                else if (it.error.isNotBlank()) {
+                    binding.status.text = "Error"
+                    binding.progress.visibility = View.INVISIBLE
+                }
+                it.data?.let {
+                    binding.status.text = "Success"
+                    binding.progress.visibility = View.INVISIBLE
+                    Toast.makeText(applicationContext, "Save Gallery",Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
 
         imageViewModel.image.observe(this) {state ->
             when(state) {
                 is Status.Loading -> {
-
+                    binding.status.text = "Loading..."
+                    binding.progress.visibility = View.VISIBLE
+                    binding.status.visibility = View.VISIBLE
                 }
                 is Status.Success -> {
-                    Glide.with(this@MainActivity).load(state.data!!.photos.random().src.large).into(binding.bg)
+                    binding.status.text = "Success"
+                    binding.progress.visibility = View.INVISIBLE
+                    val rd = state.data!!.photos.random()
+                    Glide.with(this@MainActivity).load(rd.src.large).transform(BlurTransformation(35, 1)
+                    ).into(binding.bg)
+
+                    binding.photographer.text = rd.photographer
+                    binding.link.text = rd.photographer_url
                 }
                 is Status.Error -> {
-
+                    binding.status.text = "Error"
+                    binding.progress.visibility = View.INVISIBLE
                 }
             }
         }
 
+        imageViewModel.advice.observe(this) {
+            state ->
+            when(state) {
+                is Status.Loading -> {
+                    binding.status.text = "Loading..."
+                    binding.progress.visibility = View.VISIBLE
+                    binding.status.visibility = View.VISIBLE
+                }
+                is Status.Success -> {
+                    binding.status.text = "Success"
+                    binding.progress.visibility = View.INVISIBLE
+                    binding.adviceTv.text = state.data?.slip?.advice ?: run {""}
+                }
+                is Status.Error -> {
+                    binding.status.text = "Error"
+                    binding.progress.visibility = View.INVISIBLE
+                }
+            }
+        }
 
-        binding.fab.setOnClickListener{
-            requestPermission {
-                val bitmap = getScreenShotFromView(binding.root)
+        binding.saveImg.setOnClickListener{
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val bitmap = getScreenShotFromView(binding.rl)
                 if (bitmap != null) {
                     imageViewModel.saveImage(bitmap)
                 }
             }
+            else {
+                requestPermission {
+                    val bitmap = getScreenShotFromView(binding.rl)
+                    if (bitmap != null) {
+                        imageViewModel.saveImage(bitmap)
+                    }
+                }
+            }
+
         }
 
-        binding.fab2.setOnClickListener{
-
+        binding.makeAdvice.setOnClickListener{
             imageViewModel.getImage()
+            imageViewModel.getAdvice()
         }
-
-
     }
 
     private fun requestPermission(logic : () -> Unit) {

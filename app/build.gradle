@@ -46,6 +46,7 @@ android {
 }
 
 dependencies {
+    implementation 'jp.wasabeef:glide-transformations:4.3.0'
 
     // Normal
     implementation 'io.github.ParkSangGwon:tedpermission-normal:3.3.0'

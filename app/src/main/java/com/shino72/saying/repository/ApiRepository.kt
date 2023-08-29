@@ -1,5 +1,6 @@
 package com.shino72.saying.repository
 
+
 import com.shino72.saying.BuildConfig
 import com.shino72.saying.service.ApiService
 import com.shino72.saying.service.PhotoService
@@ -18,3 +19,6 @@ class ApiRepository @Inject constructor(private val apiService: ApiService, priv
     }
 
 }
+
+
+
